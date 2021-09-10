@@ -20,4 +20,22 @@ A comprehensive library for many forms of human pose estimation.
     year = {2014},
     month = {June}
 }
+
+@article{
+    1312.4659,
+    Author = {Alexander Toshev and Christian Szegedy},
+    Title = {DeepPose: Human Pose Estimation via Deep Neural Networks},
+    Year = {2013},
+    Eprint = {arXiv:1312.4659},
+    Doi = {10.1109/CVPR.2014.214},
+}
+
+@inproceedings{
+    inproceedings,
+    author = {Krizhevsky, Alex and Sutskever, I and Hinton, G},
+    year = {2012},
+    month = {01},
+    pages = {1097-1105},
+    title = {Imagenet classification with deep convolutional neural networks}
+}
 ```

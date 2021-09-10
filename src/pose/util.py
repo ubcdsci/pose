@@ -4,7 +4,7 @@ from typing import List
 
 
 @dataclass
-class Point2D:
+class Point2DInt:
     x: int
     y: int
 
@@ -15,19 +15,52 @@ class Point2D:
         return math.sqrt(self.sqr_dist_to(other))
 
     def __add__(self, other):
-        return Point2D(self.x + other.x, self.y + other.y)
+        return Point2DInt(self.x + other.x, self.y + other.y)
 
     def __sub__(self, other):
-        return Point2D(self.x - other.x, self.y - other.y)
+        return Point2DInt(self.x - other.x, self.y - other.y)
 
     def __mul__(self, scalar):
-        return Point2D(self.x * scalar, self.y * scalar)
+        return Point2DInt(self.x * scalar, self.y * scalar)
 
     def __floordiv__(self, scalar):
-        return Point2D(self.x // scalar, self.y // scalar)
+        return Point2DInt(self.x // scalar, self.y // scalar)
 
     def __truediv__(self, scalar):
-        return Point2D(self.x / scalar, self.y / scalar)
+        return Point2DInt(self.x // scalar, self.y // scalar)
+
+    def __iter__(self):
+        yield self.x
+        yield self.y
+
+    def __repr__(self):
+        return "(x: " + str(self.x) + ", " + "y: " + str(self.y) + ")"
+
+@dataclass
+class Point2D:
+    x: float
+    y: float
+
+    def sqr_dist_to(self, other):
+        return (other.x - self.x) ** 2 + (other.y - self.y) ** 2
+
+    def dist_to(self, other):
+        return math.sqrt(self.sqr_dist_to(other))
+
+    def __add__(self, other):
+        return Point2DInt(self.x + other.x, self.y + other.y)
+
+    def __sub__(self, other):
+        return Point2DInt(self.x - other.x, self.y - other.y)
+
+    def __mul__(self, scalar):
+        return Point2DInt(self.x * scalar, self.y * scalar)
+
+    def __floordiv__(self, scalar):
+        return Point2DInt(self.x // scalar, self.y // scalar)
+
+    def __truediv__(self, scalar):
+        return Point2DInt(self.x / scalar, self.y / scalar)
 
     def __iter__(self):
         yield self.x
@@ -62,30 +95,30 @@ class BoundingBox:
         return cls(ax, ay, bx - ax, by - ay)
 
     @classmethod
-    def from_points(cls, pa: Point2D, pb: Point2D):
+    def from_points(cls, pa: Point2DInt, pb: Point2DInt):
         return cls.from_corners(pa.x, pa.y, pb.x, pb.y)
 
     @classmethod
-    def from_center(cls, center: Point2D, w, h):
-        return cls(*(center - Point2D(w, h) / 2), w, h)
+    def from_center(cls, center: Point2DInt, w, h):
+        return cls(*(center - Point2DInt(w, h) / 2), w, h)
 
     @property
-    def top_left(self) -> Point2D:
-        return Point2D(self.x, self.y)
+    def top_left(self) -> Point2DInt:
+        return Point2DInt(self.x, self.y)
 
     @property
-    def _size_as_point(self) -> Point2D:
-        return Point2D(self.w, self.h)
+    def _size_as_point(self) -> Point2DInt:
+        return Point2DInt(self.w, self.h)
 
     @property
-    def bottom_right(self) -> Point2D:
+    def bottom_right(self) -> Point2DInt:
         return self.top_left + self._size_as_point
 
     @property
-    def center(self) -> Point2D:
+    def center(self) -> Point2DInt:
         return self.top_left + self._size_as_point / 2
 
-    def contains_point(self, point: Point2D) -> bool:
+    def contains_point(self, point: Point2DInt) -> bool:
         return point.x > self.top_left.x and point.x < self.bottom_right.x and point.y > self.top_left.y and point.y < self.bottom_right.y
 
     def contains_box(self, other_box) -> bool:
@@ -114,5 +147,7 @@ class Human2D:
     """
     Describes a human as a list of joints and their connectivity as represented on a 2d image.
     """
-    joints: List[Point2D]
+    joints: List[Point2DInt]
     bbox: BoundingBox
+
+    NUM_JOINTS = 10
