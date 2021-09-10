@@ -31,13 +31,9 @@ class DeepPoseJointRegressor(nn.Module):
         - Imagenet classification with deep convolutional neural networks
         """
         super().__init__()
-        # RGB image, 3 channels. Could potentially do grayscale for fewer channels -> higher speed
-        self.conv1 = nn.Conv2d(in_channels=3, out_channels=96, kernel_size=(11, 11))
-        # The specifics of the local response normalization are not provided in the paper, but these values appear to
-        # work well.
-        self.lrn = nn.LocalResponseNorm(size=10)
-        # The specifics of the pooling are not provided in the paper, but these values appear to work well
-        self.pool = nn.AvgPool2d(4)
+        self.conv1 = nn.Conv2d(in_channels=3, out_channels=96, kernel_size=(11, 11), stride=(4, 4))
+        self.lrn = nn.LocalResponseNorm(size=5, alpha=10**-4, beta=0.75, k=2)
+        self.pool = nn.MaxPool2d(stride=2, kernel_size=3)
         self.conv2 = nn.Conv2d(in_channels=96, out_channels=256, kernel_size=(5, 5))
         self.conv3 = nn.Conv2d(in_channels=256, out_channels=384, kernel_size=(3, 3))
         self.conv4 = nn.Conv2d(in_channels=384, out_channels=384, kernel_size=(3, 3))
