@@ -18,13 +18,14 @@ from tqdm import tqdm
 import pandas as pd
 
 from pose.util import Human2D, Point2D, BoundingBox
+from pose.definitions import ROOT_PATH, TORCH_DEVICE
 from pose.two.estimator import Estimator2D
 
 
 class DeepPoseJointRegressor(nn.Module):
     def __init__(self):
         """
-        The input to the net is an image of 220 ×220 which via stride of 4 is fed into the network.
+        The input to the net is an image of 220 × 220 which via stride of 4 is fed into the network.
 
         Specifics of this implementation come from both:
         - DeepPose: Human Pose Estimation via Deep Neural Networks
@@ -43,18 +44,57 @@ class DeepPoseJointRegressor(nn.Module):
         self.fc2 = nn.Linear(4096, 2 * Human2D.NUM_JOINTS)
 
     def forward(self, x):
-        x = self.lrn(self.conv1(x))
+        x = self.lrn(torch.relu(self.conv1(x)))
         x = self.pool(x)
-        x = self.lrn(self.conv2(x))
+        x = self.lrn(torch.relu(self.conv2(x)))
         x = self.pool(x)
-        x = self.conv3(x)
-        x = self.conv4(x)
-        x = self.conv5(x)
+        x = torch.relu(self.conv3(x))
+        x = torch.relu(self.conv4(x))
+        x = torch.relu(self.conv5(x))
         x = self.pool(x)
         x = torch.flatten(x, 1)
         x = F.relu(self.fc1(x))
         x = self.fc2(x)
         return x
+
+
+    def train_from_images(self, train, validation, batch_size=256, num_epochs=2, plot=True):
+
+
+
+        criterion = nn.MSELoss().to(TORCH_DEVICE)
+        optimizer = optim.Adam(self.parameters(), lr=0.0005, weight_decay=0.004)
+        scheduler = ReduceLROnPlateau(optimizer, 'min', patience=4)
+
+        model_actions = []
+        labels = []
+        losses = []
+        validation_acc = []
+        for epoch in range(num_epochs):
+            print("Epoch", epoch)
+            running_loss = 0.0
+            # Iterate through data points while ensuring we don't access out of bounds
+            for i in tqdm(range(len(transitions))[::batch_size][:-1]):
+                batch_data = [[transitions[j].prev_state, transitions[j].action] for j in range(i, i + batch_size)]
+                x, y = zip(*batch_data)
+                x = torch.stack(x, dim=0).to(TORCH_DEVICE).float()
+                y = torch.stack(y, dim=0).to(TORCH_DEVICE).float()
+                y_class_idx = torch.max(y, 1)[1]
+                labels.extend(y_class_idx.tolist())
+                # zero the parameter gradients
+                optimizer.zero_grad()
+
+                outputs = self(x)
+                model_actions.extend([x.argmax() for x in outputs.detach().cpu().numpy()])
+                loss = criterion(outputs, y_class_idx)
+                loss.backward()
+                optimizer.step()
+                running_loss += loss.item()
+            batch_eval_loss = running_loss * batch_size
+            print('[%d] loss: %.5f' % (epoch + 1, batch_eval_loss))
+            losses.append(batch_eval_loss)
+            scheduler.step(batch_eval_loss)
+            validation_acc.append(self.evaluate_on_transitions(validation_transitions))
 
 
 class DeepPose(Estimator2D):
@@ -84,3 +124,6 @@ class DeepPose(Estimator2D):
 
     def estimate(self, image) -> Human2D:
         pass
+
+
+

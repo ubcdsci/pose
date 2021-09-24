@@ -2,3 +2,6 @@
 
 /data/**
 !/data/.keep
+
+**/__pycache__
+**.pyc

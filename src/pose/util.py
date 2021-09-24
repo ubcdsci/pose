@@ -143,11 +143,40 @@ class BoundingBox:
 
 
 @dataclass
+class Joint2D:
+    pos: Point2DInt
+    id: int
+    is_visible: bool
+
+@dataclass
 class Human2D:
     """
     Describes a human as a list of joints and their connectivity as represented on a 2d image.
-    """
-    joints: List[Point2DInt]
-    bbox: BoundingBox
 
-    NUM_JOINTS = 10
+    For humans, We use the layout found in the MPII Dataset:
+
+    Joint IDs:
+        0 - r ankle,
+        1 - r knee,
+        2 - r hip,
+        3 - l hip,
+        4 - l knee,
+        5 - l ankle,
+        6 - pelvis,
+        7 - thorax,
+        8 - upper neck,
+        9 - head top,
+        10 - r wrist,
+        11 - r elbow,
+        12 - r shoulder,
+        13 - l shoulder,
+        14 - l elbow,
+        15 - l wrist
+    """
+    joints: List[Joint2D]
+
+    @property
+    def bbox(self) -> BoundingBox:
+        pass
+
+    NUM_JOINTS = 16
