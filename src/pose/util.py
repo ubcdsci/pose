@@ -10,6 +10,13 @@ class Point2DInt:
     x: int
     y: int
 
+
+    def __init__(self, x, y):
+        self.x = x
+        self.y = y
+        if self.x > 2000 or self.y > 2000:
+            print("asd")
+
     def sqr_dist_to(self, other):
         return (other.x - self.x) ** 2 + (other.y - self.y) ** 2
 
@@ -194,26 +201,28 @@ class Human2D:
     NUM_JOINTS = 16
 
     joints: List[Joint2D]
+    img_size: Tuple[int, int]
 
     @property
     def bbox(self) -> BoundingBox:
-        min_x = min(self.joints, key=lambda x: x.pos.x).pos.x
-        min_y = min(self.joints, key=lambda x: x.pos.y).pos.y
-        max_x = max(self.joints, key=lambda x: x.pos.x).pos.x
-        max_y = max(self.joints, key=lambda x: x.pos.y).pos.y
-        return BoundingBox.from_corners(min_x, min_y, max_x, max_y)
+        # min_x = min(self.joints, key=lambda x: x.pos.x).pos.x
+        # min_y = min(self.joints, key=lambda x: x.pos.y).pos.y
+        # max_x = max(self.joints, key=lambda x: x.pos.x).pos.x
+        # max_y = max(self.joints, key=lambda x: x.pos.y).pos.y
+        return BoundingBox.from_corners(0, 0, self.img_size[0], self.img_size[1])
 
-    @property
-    def one_hot(self) -> np.array:
+    def one_hot(self, img_dims) -> np.array:
         out_vec = []
         assert len(self.joints) == Human2D.NUM_JOINTS
         for joint in self.joints:
-            norm_joint_pos = normalize_human_coords(joint.pos.x, joint.pos.y, self.bbox)
+            img_bbox = BoundingBox.from_corners(0, 0, img_dims[0], img_dims[1])
+            norm_joint_pos = normalize_human_coords(joint.pos.x, joint.pos.y, img_bbox)
             out_vec.append(norm_joint_pos.x)
             out_vec.append(norm_joint_pos.y)
         return np.asarray(out_vec)
 
     def resize(self, current_dims, new_size):
+        self.img_size = new_size
         # current dims have channels in dim 0
         x_factor = new_size[0] / current_dims[1]
         y_factor = new_size[1] / current_dims[2]

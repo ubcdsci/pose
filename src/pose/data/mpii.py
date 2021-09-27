@@ -27,12 +27,14 @@ def load_mpii_data() -> Pose2DSingleRegressionDataset:
             x = joint[0][0][0]
             y = joint[1][0][0]
             id = joint[2][0][0]
+            if x > 2000 or y > 2000:
+                print("aaas")
             is_visible = joint[3].shape == (1, 1)
             joints.append(Joint2D(Point2DInt(x, y), id, is_visible))
 
         if len(joints) != Human2D.NUM_JOINTS:
             continue
-        human = Human2D(joints)
+        human = Human2D(joints, (0, 0))
         data_points.append(Pose2DSingleRegressionDataPoint(str(base_img_path / img_name), human))
     return Pose2DSingleRegressionDataset(data_points)
 

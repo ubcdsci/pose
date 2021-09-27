@@ -72,6 +72,7 @@ class DeepPoseJointRegressor(nn.Module):
             train: Pose2DSingleRegressionDataset,
             batch_size=15,
             num_epochs=2,
+            print_stride=10,
             plot=True
     ):
 
@@ -83,6 +84,7 @@ class DeepPoseJointRegressor(nn.Module):
         for epoch in range(num_epochs):
             print("Epoch", epoch)
             running_loss = 0.0
+            iters = 0
             # Iterate through data points while ensuring we don't access out of bounds
             for i in tqdm(range(len(train.data))[::batch_size][:-1]):
                 batch = train.create_batch(i, i + batch_size, size=(220, 220))
@@ -94,9 +96,12 @@ class DeepPoseJointRegressor(nn.Module):
                 loss.backward()
                 optimizer.step()
                 running_loss += loss.item()
-            batch_eval_loss = running_loss * batch_size
-            print('[%d] loss: %.5f' % (epoch + 1, batch_eval_loss))
-            losses.append(batch_eval_loss)
+                iters += 1
+                if iters % print_stride == 0:
+                    running_loss = running_loss * batch_size / print_stride
+                    print('[%d] loss: %.5f' % (epoch + 1, running_loss))
+                    losses.append(running_loss)
+                    running_loss = 0
             # scheduler.step(batch_eval_loss)
 
 
