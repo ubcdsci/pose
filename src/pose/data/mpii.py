@@ -2,35 +2,36 @@ import cv2
 import scipy.io as spio
 
 from pose.definitions import SETTINGS, ROOT_PATH
-from pose.two.single_person.regression.dataset import Pose2DSingleRegressionDataset
+from pose.two.single_person.regression.dataset import Pose2DSingleRegressionDataset, Pose2DSingleRegressionDataPoint
 from pose.util import Joint2D, Point2DInt, Human2D
 
 
-def _load_mpii_img(img_name: str):
-    return cv2.imread(ROOT_PATH / SETTINGS["data"]["mpii_base"] / "images" / img_name)
-
-
 def load_mpii_data() -> Pose2DSingleRegressionDataset:
+    base_img_path = ROOT_PATH / SETTINGS["data"]["mpii_base"] / "images"
     lib = spio.loadmat(ROOT_PATH / SETTINGS["data"]["mpii_base"] / "annotations/mpii_human_pose_v1_u12_1.mat")
     annolist = lib["RELEASE"][0, 0]["annolist"][0, :]
+
+    data_points = []
     for annot in annolist:
         img_name = annot["image"][0, 0]["name"][0]
-        print(annot["annorect"].dtype)
 
         # Skip images with no people
-        if "annopoints" not in list(annot["annorect"].dtype.fields.keys()):
+        try:
+            annopoints = annot["annorect"][0, 0]["annopoints"]
+            joints = []
+            mat_joints = annopoints[0, 0]["point"][0, :]
+        except (IndexError, KeyError, ValueError, TypeError) as e:
             continue
 
-        annopoints = annot["annorect"][0, 0]["annopoints"]
-        joints = []
-        mat_joints = annopoints[0, 0]["point"][0, :]
         for joint in mat_joints:
-            x = joint[1][0][0]
-            y = joint[2][0][0]
-            id = joint[3][0][0]
-            is_visible = bool(joint[4][0][0])
+            x = joint[0][0][0]
+            y = joint[1][0][0]
+            id = joint[2][0][0]
+            is_visible = joint[3].shape == (1, 1)
             joints.append(Joint2D(Point2DInt(x, y), id, is_visible))
         human = Human2D(joints)
+        data_points.append(Pose2DSingleRegressionDataPoint(str(base_img_path / img_name), human))
+    return Pose2DSingleRegressionDataset(data_points)
 
 
 if __name__ == "__main__":

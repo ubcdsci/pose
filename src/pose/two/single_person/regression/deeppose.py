@@ -17,6 +17,8 @@ from torch.optim.lr_scheduler import ExponentialLR, ReduceLROnPlateau
 from tqdm import tqdm
 import pandas as pd
 
+from pose.data.mpii import load_mpii_data
+from pose.two.single_person.regression.dataset import Pose2DSingleRegressionDataset
 from pose.util import Human2D, Point2D, BoundingBox
 from pose.definitions import ROOT_PATH, TORCH_DEVICE
 from pose.two.estimator import Estimator2D
@@ -33,7 +35,7 @@ class DeepPoseJointRegressor(nn.Module):
         """
         super().__init__()
         self.conv1 = nn.Conv2d(in_channels=3, out_channels=96, kernel_size=(11, 11), stride=(4, 4))
-        self.lrn = nn.LocalResponseNorm(size=5, alpha=10**-4, beta=0.75, k=2)
+        self.lrn = nn.LocalResponseNorm(size=5, alpha=10 ** -4, beta=0.75, k=2)
         self.pool = nn.MaxPool2d(stride=2, kernel_size=3)
         self.conv2 = nn.Conv2d(in_channels=96, out_channels=256, kernel_size=(5, 5))
         self.conv3 = nn.Conv2d(in_channels=256, out_channels=384, kernel_size=(3, 3))
@@ -57,48 +59,41 @@ class DeepPoseJointRegressor(nn.Module):
         x = self.fc2(x)
         return x
 
-
-    def train_from_images(self, train, validation, batch_size=256, num_epochs=2, plot=True):
-
-
+    def train_from_dataset(
+            self,
+            train: Pose2DSingleRegressionDataset,
+            batch_size=256,
+            num_epochs=2,
+            plot=True
+    ):
 
         criterion = nn.MSELoss().to(TORCH_DEVICE)
         optimizer = optim.Adam(self.parameters(), lr=0.0005, weight_decay=0.004)
-        scheduler = ReduceLROnPlateau(optimizer, 'min', patience=4)
+        # scheduler = ReduceLROnPlateau(optimizer, 'min', patience=4)
 
-        model_actions = []
-        labels = []
         losses = []
-        validation_acc = []
         for epoch in range(num_epochs):
             print("Epoch", epoch)
             running_loss = 0.0
             # Iterate through data points while ensuring we don't access out of bounds
-            for i in tqdm(range(len(transitions))[::batch_size][:-1]):
-                batch_data = [[transitions[j].prev_state, transitions[j].action] for j in range(i, i + batch_size)]
-                x, y = zip(*batch_data)
-                x = torch.stack(x, dim=0).to(TORCH_DEVICE).float()
-                y = torch.stack(y, dim=0).to(TORCH_DEVICE).float()
-                y_class_idx = torch.max(y, 1)[1]
-                labels.extend(y_class_idx.tolist())
+            for i in tqdm(range(len(train.data))[::batch_size][:-1]):
+                batch = train.create_batch(i, i + batch_size, stride=4)
                 # zero the parameter gradients
                 optimizer.zero_grad()
 
-                outputs = self(x)
-                model_actions.extend([x.argmax() for x in outputs.detach().cpu().numpy()])
-                loss = criterion(outputs, y_class_idx)
+                outputs = self(batch.img_tensor)
+                loss = criterion(outputs, batch.humans_tensor)
                 loss.backward()
                 optimizer.step()
                 running_loss += loss.item()
             batch_eval_loss = running_loss * batch_size
             print('[%d] loss: %.5f' % (epoch + 1, batch_eval_loss))
             losses.append(batch_eval_loss)
-            scheduler.step(batch_eval_loss)
-            validation_acc.append(self.evaluate_on_transitions(validation_transitions))
+            # scheduler.step(batch_eval_loss)
 
 
 class DeepPose(Estimator2D):
-    def __init__(self):
+    def __init__(self, regressor: DeepPoseJointRegressor):
         pass
 
     def _initial_regression(self):
@@ -107,18 +102,6 @@ class DeepPose(Estimator2D):
     def _refine(self):
         pass
 
-    def _normalize_joint(self, joint: Point2D, human_bbox: BoundingBox) -> Point2D:
-        return Point2D(
-            (joint.x - human_bbox.center.x) / human_bbox.w,
-            (joint.y - human_bbox.center.y) / human_bbox.h,
-        )
-
-    def _denormalize_joint(self, joint: Point2D, human_bbox: BoundingBox) -> Point2D:
-        return Point2D(
-            joint.x * human_bbox.w + human_bbox.center.x,
-            joint.y * human_bbox.h + human_bbox.center.y
-        )
-
     def _find_human_bbox(self) -> BoundingBox:
         pass
 
@@ -126,4 +109,8 @@ class DeepPose(Estimator2D):
         pass
 
 
+if __name__ == "__main__":
+    regressor = DeepPoseJointRegressor()
 
+    train_dtst = load_mpii_data()
+    regressor.train_from_dataset(train_dtst)

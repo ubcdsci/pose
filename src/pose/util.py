@@ -2,6 +2,8 @@ import math
 from dataclasses import dataclass
 from typing import List
 
+import numpy as np
+
 
 @dataclass
 class Point2DInt:
@@ -35,6 +37,7 @@ class Point2DInt:
 
     def __repr__(self):
         return "(x: " + str(self.x) + ", " + "y: " + str(self.y) + ")"
+
 
 @dataclass
 class Point2D:
@@ -119,7 +122,7 @@ class BoundingBox:
         return self.top_left + self._size_as_point / 2
 
     def contains_point(self, point: Point2DInt) -> bool:
-        return point.x > self.top_left.x and point.x < self.bottom_right.x and point.y > self.top_left.y and point.y < self.bottom_right.y
+        return self.top_left.x < point.x < self.bottom_right.x and self.top_left.y < point.y < self.bottom_right.y
 
     def contains_box(self, other_box) -> bool:
         return self.contains_point(other_box.top_left) and self.contains_point(other_box.bottom_right)
@@ -142,11 +145,26 @@ class BoundingBox:
         return BoundingBox.from_corners(out_ax, out_ay, out_bx, out_by)
 
 
+def normalize_human_coords(x, y, human_bbox: BoundingBox) -> Point2D:
+    return Point2D(
+        (x - human_bbox.center.x) / human_bbox.w,
+        (y - human_bbox.center.y) / human_bbox.h,
+    )
+
+
+def denormalize_human_coords(norm_x, norm_y, human_bbox: BoundingBox) -> Point2D:
+    return Point2D(
+        norm_x * human_bbox.w + human_bbox.center.x,
+        norm_y * human_bbox.h + human_bbox.center.y
+    )
+
+
 @dataclass
 class Joint2D:
     pos: Point2DInt
     id: int
     is_visible: bool
+
 
 @dataclass
 class Human2D:
@@ -173,10 +191,23 @@ class Human2D:
         14 - l elbow,
         15 - l wrist
     """
+    NUM_JOINTS = 16
+
     joints: List[Joint2D]
 
     @property
     def bbox(self) -> BoundingBox:
-        pass
+        min_x = min(self.joints, key=lambda x: x.pos.x).pos.x
+        min_y = min(self.joints, key=lambda x: x.pos.y).pos.y
+        max_x = max(self.joints, key=lambda x: x.pos.x).pos.x
+        max_y = max(self.joints, key=lambda x: x.pos.y).pos.y
+        return BoundingBox.from_corners(min_x, min_y, max_x, max_y)
 
-    NUM_JOINTS = 16
+    @property
+    def one_hot(self) -> np.array:
+        out_vec = []
+        for joint in self.joints:
+            norm_joint_pos = normalize_human_coords(joint.pos.x, joint.pos.y, self.bbox)
+            out_vec.append(norm_joint_pos.x)
+            out_vec.append(norm_joint_pos.y)
+        return np.asarray(out_vec)
