@@ -1,6 +1,6 @@
 import math
 from dataclasses import dataclass
-from typing import List
+from typing import List, Tuple
 
 import numpy as np
 
@@ -206,8 +206,17 @@ class Human2D:
     @property
     def one_hot(self) -> np.array:
         out_vec = []
+        assert len(self.joints) == Human2D.NUM_JOINTS
         for joint in self.joints:
             norm_joint_pos = normalize_human_coords(joint.pos.x, joint.pos.y, self.bbox)
             out_vec.append(norm_joint_pos.x)
             out_vec.append(norm_joint_pos.y)
         return np.asarray(out_vec)
+
+    def resize(self, current_dims, new_size):
+        # current dims have channels in dim 0
+        x_factor = new_size[0] / current_dims[1]
+        y_factor = new_size[1] / current_dims[2]
+        for joint in self.joints:
+            joint.pos.x *= x_factor
+            joint.pos.y *= y_factor

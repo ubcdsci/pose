@@ -25,16 +25,19 @@ class Pose2DSingleRegressionBatch:
 class Pose2DSingleRegressionDataset:
     data: List[Pose2DSingleRegressionDataPoint]
 
-    def create_batch(self, start_idx: int, end_idx: int, stride=1) -> Pose2DSingleRegressionBatch:
+    def create_batch(self, start_idx: int, end_idx: int, size=None) -> Pose2DSingleRegressionBatch:
         images = []
-        humans = []
+        human_arrs = []
         for point in self.data[start_idx: end_idx]:
             img = cv2.imread(point.img_path)
-            img = cv2.resize(img, (210, 210))[::stride, ::stride, :]
-            images.append(np.expand_dims(np.rollaxis(img, 2, 0), 0))
-            humans.append(point.human)
+            if size is not None:
+                img = cv2.resize(img, size)
 
-        img_tensor = torch.from_numpy(np.concatenate(images, axis=0)).to(TORCH_DEVICE)
-        human_tensor = torch.from_numpy(np.concatenate([x.one_hot for x in humans])).to(TORCH_DEVICE)
+            point.human.resize(img.shape, size)
+            images.append(np.expand_dims(np.rollaxis(img, 2, 0), 0))
+            human_arrs.append(np.expand_dims(point.human.one_hot, 0))
+
+        img_tensor = torch.from_numpy(np.concatenate(images, axis=0)).to(TORCH_DEVICE) / 255.0
+        human_tensor = torch.from_numpy(np.concatenate(human_arrs)).to(TORCH_DEVICE).float()
 
         return Pose2DSingleRegressionBatch(img_tensor, human_tensor)
