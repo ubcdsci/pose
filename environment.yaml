@@ -1,0 +1,13 @@
+name: grasp-analytics
+dependencies:
+  - numpy
+  - matplotlib
+  - pandas
+  - scipy
+  - pillow
+  - pyyaml
+  - pathlib
+  - pytest
+  - pyserial
+  - conda-forge::pre_commit
+  - plotly::plotly

@@ -174,7 +174,7 @@ class Joint2D:
 
 
 @dataclass
-class Human2D:
+class   Human2D:
     """
     Describes a human as a list of joints and their connectivity as represented on a 2d image.
 

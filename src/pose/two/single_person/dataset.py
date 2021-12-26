@@ -5,27 +5,22 @@ import cv2
 import torch
 import numpy as np
 
+from pose.dataset import PoseDataset, PoseBatch
 from pose.definitions import TORCH_DEVICE
 from pose.util import Human2D
 
 
 @dataclass
-class Pose2DSingleRegressionDataPoint:
+class SinglePose2DDataPoint:
     img_path: str
     human: Human2D
 
 
 @dataclass
-class Pose2DSingleRegressionBatch:
-    img_tensor: torch.Tensor
-    humans_tensor: torch.Tensor
+class SinglePose2DDataset(PoseDataset):
+    data: List[SinglePose2DDataPoint]
 
-
-@dataclass
-class Pose2DSingleRegressionDataset:
-    data: List[Pose2DSingleRegressionDataPoint]
-
-    def create_batch(self, start_idx: int, end_idx: int, size=None) -> Pose2DSingleRegressionBatch:
+    def create_batch(self, start_idx: int, end_idx: int, size=None) -> PoseBatch:
         images = []
         human_arrs = []
         for point in self.data[start_idx: end_idx]:
@@ -41,4 +36,4 @@ class Pose2DSingleRegressionDataset:
         img_tensor = torch.from_numpy(np.concatenate(images, axis=0)).to(TORCH_DEVICE) / 255.0
         human_tensor = torch.from_numpy(np.concatenate(human_arrs)).to(TORCH_DEVICE).float()
 
-        return Pose2DSingleRegressionBatch(img_tensor, human_tensor)
+        return PoseBatch(img_tensor, human_tensor)

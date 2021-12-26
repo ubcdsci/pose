@@ -1,12 +1,11 @@
-import cv2
 import scipy.io as spio
 
 from pose.definitions import SETTINGS, ROOT_PATH
-from pose.two.single_person.regression.dataset import Pose2DSingleRegressionDataset, Pose2DSingleRegressionDataPoint
+from pose.two.single_person.dataset import SinglePose2DDataset, SinglePose2DDataPoint
 from pose.util import Joint2D, Point2DInt, Human2D
 
 
-def load_mpii_data() -> Pose2DSingleRegressionDataset:
+def load_mpii_data() -> SinglePose2DDataset:
     base_img_path = ROOT_PATH / SETTINGS["data"]["mpii_base"] / "images"
     lib = spio.loadmat(ROOT_PATH / SETTINGS["data"]["mpii_base"] / "annotations/mpii_human_pose_v1_u12_1.mat")
     annolist = lib["RELEASE"][0, 0]["annolist"][0, :]
@@ -35,8 +34,8 @@ def load_mpii_data() -> Pose2DSingleRegressionDataset:
         if len(joints) != Human2D.NUM_JOINTS:
             continue
         human = Human2D(joints, (0, 0))
-        data_points.append(Pose2DSingleRegressionDataPoint(str(base_img_path / img_name), human))
-    return Pose2DSingleRegressionDataset(data_points)
+        data_points.append(SinglePose2DDataPoint(str(base_img_path / img_name), human))
+    return SinglePose2DDataset(data_points)
 
 
 if __name__ == "__main__":

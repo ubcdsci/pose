@@ -22,11 +22,10 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import torch.optim as optim
-from torch.optim.lr_scheduler import ExponentialLR, ReduceLROnPlateau
 from tqdm import tqdm
 
 from pose.data.mpii import load_mpii_data
-from pose.two.single_person.regression.dataset import Pose2DSingleRegressionDataset
+from pose.two.single_person.dataset import SinglePose2DDataset
 from pose.util import Human2D, BoundingBox
 from pose.definitions import TORCH_DEVICE
 from pose.two.estimator import Estimator2D
@@ -40,6 +39,8 @@ class DeepPoseJointRegressor(nn.Module):
         Specifics of this implementation come from both:
         - DeepPose: Human Pose Estimation via Deep Neural Networks
         - Imagenet classification with deep convolutional neural networks
+
+        The CNN architecture contains 7 layers which can be listed as : C(55×55×96) — LRN — P — C(27×27×256) — LRN — P — C(13×13×384) — C(13×13×384) — C(13×13×256) — P — F(4096) — F(4096)
         """
         super().__init__()
         self.conv1 = nn.Conv2d(in_channels=3, out_channels=96, kernel_size=(11, 11), stride=(4, 4), padding=(4, 4))
@@ -69,7 +70,7 @@ class DeepPoseJointRegressor(nn.Module):
 
     def train_from_dataset(
             self,
-            train: Pose2DSingleRegressionDataset,
+            train: SinglePose2DDataset,
             batch_size=15,
             num_epochs=2,
             print_stride=10,

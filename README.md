@@ -2,6 +2,10 @@
 
 A comprehensive library for many forms of human pose estimation.
 
+## Installation
+
+
+
 ## References
 
 ```
