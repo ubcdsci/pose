@@ -10,12 +10,9 @@ class Point2DInt:
     x: int
     y: int
 
-
     def __init__(self, x, y):
         self.x = x
         self.y = y
-        if self.x > 2000 or self.y > 2000:
-            print("asd")
 
     def sqr_dist_to(self, other):
         return (other.x - self.x) ** 2 + (other.y - self.y) ** 2

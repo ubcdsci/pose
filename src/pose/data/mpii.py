@@ -26,8 +26,6 @@ def load_mpii_data() -> SinglePose2DDataset:
             x = joint[0][0][0]
             y = joint[1][0][0]
             id = joint[2][0][0]
-            if x > 2000 or y > 2000:
-                print("aaas")
             is_visible = joint[3].shape == (1, 1)
             joints.append(Joint2D(Point2DInt(x, y), id, is_visible))
 
