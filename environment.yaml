@@ -1,4 +1,4 @@
-name: grasp-analytics
+name: pose
 dependencies:
   - numpy
   - matplotlib
