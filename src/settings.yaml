@@ -1,4 +1,4 @@
 data:
   root: "data"
-  mpii_base: "mpii"
+  mpii_base: "data/mpii_base"
   coco_wholebody_base: "coco-wholebody"

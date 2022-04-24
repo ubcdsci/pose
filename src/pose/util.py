@@ -200,6 +200,15 @@ class   Human2D:
     joints: List[Joint2D]
     img_size: Tuple[int, int]
 
+    @classmethod
+    def from_vector(cls, vector):
+        assert len(vector) == cls.NUM_JOINTS * 2
+        out_joints = []
+        for i in range(0, len(vector), 2):
+            joint = Joint2D(Point2DInt(vector[i], vector[i+1]), i // 2, True)
+            out_joints.append(joint)
+        return cls(out_joints, (0, 0))
+
     @property
     def bbox(self) -> BoundingBox:
         # min_x = min(self.joints, key=lambda x: x.pos.x).pos.x

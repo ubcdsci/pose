@@ -7,7 +7,7 @@ from pose.util import Joint2D, Point2DInt, Human2D
 
 def load_mpii_data() -> SinglePose2DDataset:
     base_img_path = ROOT_PATH / SETTINGS["data"]["mpii_base"] / "images"
-    lib = spio.loadmat(ROOT_PATH / SETTINGS["data"]["mpii_base"] / "annotations/mpii_human_pose_v1_u12_1.mat")
+    lib = spio.loadmat(str(ROOT_PATH / SETTINGS["data"]["mpii_base"] / "annotations"/"mpii_human_pose_v1_u12_1.mat"))
     annolist = lib["RELEASE"][0, 0]["annolist"][0, :]
 
     data_points = []
